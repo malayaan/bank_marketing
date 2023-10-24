@@ -123,6 +123,6 @@ print(formatted_combinations_df)
 # 1      gini          2                 6                 13         0.727602        0.071393
 
 # les deux meilleurs arbres avec élagages retenues sont ceux d'hypermatres:
-#    ccp_alpha criterion  max_depth  min_samples_leaf  min_samples_split  mean_test_score  std_test_score
-# 0      0.001   entropy          2                 6                 13         0.727602        0.071393
-# 1      0.010      gini          3                 1                  5         0.727602        0.071393
+#    ccp_alpha criterion  max_depth  min_samples_leaf  min_samples_split  mean_test_score  std_test_score  precision rappel 
+# 0      0.001   entropy          2                 6                 13         0.727602        0.071393  0.6146     0.5226
+# 1      0.010      gini          3                 1                  5         0.727602        0.071393  0.6146     0.5226
