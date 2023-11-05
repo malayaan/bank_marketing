@@ -1,10 +1,12 @@
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import GridSearchCV
+from sklearn.tree import DecisionTreeClassifier
+from scipy.stats import mode
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.metrics import accuracy_score
+from sklearn.utils import resample
+from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix, roc_auc_score, auc, roc_curve, precision_recall_curve, average_precision_score
-
 
 # Load the data
 file_path = 'bank_marketing_encoded.csv'
@@ -20,47 +22,61 @@ y = data['class']
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Check the shape of the resulting dataframes
-(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+# Paramètres de la forêt
+n_trees = 90
+bootstrap_size = int(0.8 * len(X_train))
 
-# Initialize the Random Forest classifier
-rf_classifier = RandomForestClassifier(random_state=42)
+# Fonction pour faire des prédictions avec la forêt
+def predict_forest(forest, X):
+    predictions = np.array([tree.predict(X) for tree in forest])
+    predictions_mode = mode(predictions, axis=0, keepdims=True)[0][0]  # If you want to keep the dimensions
+    return predictions_mode
 
-# Fit the classifier to the training data
-rf_classifier.fit(X_train, y_train)
+# Optimisation des hyperparamètres
+alpha_values = np.logspace(-4, -1, 11)
+alpha_scores = []
 
-# Predict on the test data
-y_pred = rf_classifier.predict(X_test)
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
-# Calculate accuracy
-accuracy = accuracy_score(y_test, y_pred)
-report = classification_report(y_test, y_pred)
+for alpha in alpha_values:
+    print("alpha",alpha)
+    fold_scores = []
+    for train_index, val_index in kf.split(X_train):
+        # Diviser les données
+        X_train_fold, X_val_fold = X_train.iloc[train_index], X_train.iloc[val_index]
+        y_train_fold, y_val_fold = y_train.iloc[train_index], y_train.iloc[val_index]
 
-print("performance_ref", accuracy, report)
-#Ces résultats montrent que le modèle est meilleur pour prédire les clients qui ne souscriront pas (classe 0) par rapport à ceux qui souscriront (classe 1). Cela pourrait être dû à un déséquilibre dans les classes de l'ensemble de données.
+        # Réinitialiser la forêt pour le pli actuel
+        current_forest = []
+        for i in range(n_trees):
+            # Bootstrapping
+            X_sample, y_sample = resample(X_train_fold, y_train_fold, n_samples=bootstrap_size, random_state=i)
+            tree = DecisionTreeClassifier(max_depth=10, min_samples_leaf=2, min_samples_split=5, random_state=42+i, ccp_alpha=alpha)
+            tree.fit(X_sample, y_sample)
+            current_forest.append(tree)
 
-# Define the parameter grid
-param_grid = {
-    'n_estimators': [90],
-    'max_depth': [10],
-    'min_samples_split': [5],
-    'min_samples_leaf': [2]
-}
+        # Faire des prédictions sur le pli de validation
+        y_val_pred = predict_forest(current_forest, X_val_fold)
 
-# Initialize the GridSearchCV object
-grid_search = GridSearchCV(estimator=rf_classifier, param_grid=param_grid, 
-                           cv=5, n_jobs=-1, verbose=2)
+        # Calculer le score pour le pli actuel
+        fold_score = accuracy_score(y_val_fold, y_val_pred)
+        fold_scores.append(fold_score)
+    
+    # Calculer la moyenne des scores de validation croisée
+    mean_cv_score = np.mean(fold_scores)
+    print("mean_cv_score", mean_cv_score)
+    alpha_scores.append(mean_cv_score)
 
-# Fit the grid search to the data
-grid_search.fit(X_train, y_train)
+# Trouver le meilleur ccp_alpha
+best_alpha_index = np.argmax(alpha_scores)
+best_alpha = alpha_values[best_alpha_index]
+best_alpha_score = alpha_scores[best_alpha_index]
+print("Best ccp_alpha:", best_alpha)
+print("Best ccp_alpha score:", best_alpha_score)
 
-# Get the best parameters
-best_params = grid_search.best_params_
-#print("performance_ref", accuracy, report)
-print("Best parameters:", best_params)
 
-# Train the classifier with the best found parameters
-best_rf_classifier = RandomForestClassifier(**best_params, random_state=42)
+# Train the optimized model with the best ccp_alpha
+best_rf_classifier = DecisionTreeClassifier(ccp_alpha=best_alpha, random_state=42)
 best_rf_classifier.fit(X_train, y_train)
 
 # Predict on the test data using the best model
@@ -70,9 +86,7 @@ y_pred_best = best_rf_classifier.predict(X_test)
 accuracy_best = accuracy_score(y_test, y_pred_best)
 report_best = classification_report(y_test, y_pred_best)
 
-print("performance_optimized", accuracy_best, report_best)
-
-# Print the classification report for the optimized model
+print("performance_optimized", accuracy_best)
 print("Classification Report for the Optimized Model:")
 print(report_best)
 
