@@ -15,13 +15,7 @@ def plot_confusion_matrix(cm, title="Confusion Matrix"):
     plt.title(title)
     plt.show()
 
-data = pd.read_csv('7 bank_marketing (2).csv', sep=';')
-
-# Codage à chaud des variables catégorielles pour éviter d'avoir un ordre implicite
-data_encoded = pd.get_dummies(data, columns=['marital', 'education', 'default', 'housing', 'loan', 'contact', 'poutcome'], drop_first=True)
-# file_path = "bank_marketing_encoded.csv"
-# data_encoded.to_csv(file_path, index=False)
-# print(data_encoded.head())
+data_encoded = pd.read_csv('bank_marketing_balanced.csv')
 
 # Séparer les variables indépendantes et dépendantes
 X = data_encoded.drop('class', axis=1)
@@ -30,7 +24,7 @@ y = data_encoded['class']
 # Paramètres à optimiser, including ccp_alpha for pruning
 param_grid = {
     'criterion': ['gini', 'entropy'],
-    'max_depth': [None, 1, 2, 3, 4, 5],
+    'max_depth': [None, 1, 5, 10, 20],
     'min_samples_split': [3, 5, 7, 9, 11, 13, 15, 17],
     'min_samples_leaf': [1, 2, 5, 6],
     'ccp_alpha': [0, 0.001, 0.01, 0.1, 0.2, 0.3]  # Added values for ccp_alpha
@@ -78,7 +72,7 @@ for idx, row in top_2_combinations.iterrows():
 formatted_combinations_df = pd.DataFrame(formatted_combinations)
 
 # Filter results for visualization
-filtered_results = results[(results['param_ccp_alpha'] == 0)][['param_criterion', 'param_max_depth', 'mean_test_score', 'std_test_score']]
+filtered_results = results[['param_criterion', 'param_max_depth', 'mean_test_score', 'std_test_score']] #[(results['param_ccp_alpha'] == 0)]
 filtered_results['param_max_depth'].replace({None: 0}, inplace=True)
 filtered_results['param_criterion_num'] = filtered_results['param_criterion'].map({'gini': 0, 'entropy': 1})
 
@@ -117,6 +111,10 @@ plt.show()
 # Return the top 2 combinations for the user
 print(formatted_combinations_df)
 
+#résultats:
+
+# pour les données unbalanced:
+
 # les deux meilleurs arbres sans élagages retenues sont ceux d'hypermatres:
 # criterion  max_depth  min_samples_leaf  min_samples_split  mean_test_score  std_test_score
 # 0   entropy          1                 1                 17         0.727602        0.071393
@@ -126,3 +124,12 @@ print(formatted_combinations_df)
 #    ccp_alpha criterion  max_depth  min_samples_leaf  min_samples_split  mean_test_score  std_test_score  precision rappel 
 # 0      0.001   entropy          2                 6                 13         0.727602        0.071393  0.6146     0.5226
 # 1      0.010      gini          3                 1                  5         0.727602        0.071393  0.6146     0.5226
+
+
+# pour les données équilibrées:
+
+#oversampling (dupplication aléatoire de données de la class sous représentée)
+# les deux meilleurs arbres sans élagages retenues sont ceux d'hypermatres:
+#    criterion max_depth  min_samples_leaf  min_samples_split  mean_test_score  std_test_score
+#0     entropy      None                 1                  3         0.851780        0.078330
+#1        gini      None                 1                  3         0.848698        0.081209
