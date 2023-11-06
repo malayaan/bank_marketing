@@ -1,10 +1,11 @@
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import GridSearchCV, train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
-from mpl_toolkits.mplot3d import Axes3D
+from imblearn.over_sampling import SMOTE
+from mpl_toolkits.mplot3d import Axes3D  # Import this for 3D plotting
 
 # Function to display confusion matrix visually
 def plot_confusion_matrix(cm, title="Confusion Matrix"):
@@ -15,101 +16,62 @@ def plot_confusion_matrix(cm, title="Confusion Matrix"):
     plt.title(title)
     plt.show()
 
-data_encoded = pd.read_csv('bank_marketing_balanced.csv')
+# Load the data
+data_encoded = pd.read_csv('bank_marketing_encoded.csv')
 
-# Séparer les variables indépendantes et dépendantes
+# Separate independent and dependent variables
 X = data_encoded.drop('class', axis=1)
 y = data_encoded['class']
 
-# Paramètres à optimiser, including ccp_alpha for pruning
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Initialize SMOTE and apply on training data only
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+
+#si on veut travailler sur les données unbalanced:
+#X_train_smote, y_train_smote = X_train, y_train
+
+# Define parameters for GridSearchCV
 param_grid = {
     'criterion': ['gini', 'entropy'],
     'max_depth': [None, 1, 5, 10, 20],
-    'min_samples_split': [3, 5, 7, 9, 11, 13, 15, 17],
-    'min_samples_leaf': [1, 2, 5, 6],
-    'ccp_alpha': [0, 0.001, 0.01, 0.1, 0.2, 0.3]  # Added values for ccp_alpha
+    'min_samples_split': [2, 3, 5, 7, 9],
+    'min_samples_leaf': [1, 2, 4, 6],
+    'ccp_alpha': [0, 0.001, 0.01, 0.1, 0.2, 0.3]
 }
 
-# Initialisation de GridSearchCV avec un arbre de décision, les paramètres élargis, et k-fold (par exemple k=5)
-grid_search_extended = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=5, scoring='f1_macro', n_jobs=-1, verbose=1)
+# Initialize GridSearchCV
+grid_search = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=5, scoring='f1_macro', n_jobs=-1, verbose=1)
 
-# Entraînement de GridSearchCV sur toutes les données
-grid_search_extended.fit(X, y)
+# Fit GridSearchCV on the training data only
+grid_search.fit(X_train_smote, y_train_smote)
 
-# Récupération de la matrice de résultats
-results = pd.DataFrame(grid_search_extended.cv_results_)
+# Get the best estimator and predict on the test set
+best_tree = grid_search.best_estimator_
+y_pred = best_tree.predict(X_test)
+cm = confusion_matrix(y_test, y_pred)
+plot_confusion_matrix(cm, title="Confusion Matrix for Best Model")
 
-# Affichage des deux meilleures combinaisons d'hyperparamètres
-top_2_combinations = results[['params', 'mean_test_score', 'std_test_score', 'rank_test_score']].sort_values(by='rank_test_score').head(2)
+# Display top 2 hyperparameter combinations
+results = pd.DataFrame(grid_search.cv_results_)
+top_2_combinations = results.nlargest(2, 'mean_test_score')
 
-# Pour chaque meilleure combinaison, affichez la matrice de confusion
-confusion_matrices = []
+# For each of the top 2 combinations, display the confusion matrix
 for idx, row in top_2_combinations.iterrows():
-    # Entraînez le modèle avec les hyperparamètres optimaux
-    model = DecisionTreeClassifier(**row['params'])
-    model.fit(X, y)
-    # Prédiction sur toutes les données (car nous n'avons pas de division train/test)
-    y_pred = model.predict(X)
-    cm = confusion_matrix(y, y_pred)
-    confusion_matrices.append(cm)
+    params = row['params']
+    model = DecisionTreeClassifier(**params).fit(X_train_smote, y_train_smote)
+    y_pred = model.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(cm, title=f"Confusion Matrix for Top {idx+1} Combination")
 
-# Display confusion matrices visually
-for idx, confusion in enumerate(confusion_matrices):
-    plot_confusion_matrix(confusion, title=f"Confusion Matrix for Combination {idx + 1}")
+# Displaying the top 2 hyperparameter combinations in a structured format
+top_2_params = top_2_combinations['params'].apply(pd.Series)
+top_2_params['mean_test_score'] = top_2_combinations['mean_test_score']
+top_2_params['std_test_score'] = top_2_combinations['std_test_score']
+print(top_2_params)
 
-# Displaying top 2 hyperparameter combinations in a more structured and readable format
-formatted_combinations = []
-
-for idx, row in top_2_combinations.iterrows():
-    formatted_combination = {}
-    for key, value in row['params'].items():
-        formatted_combination[key] = value
-    formatted_combination['mean_test_score'] = row['mean_test_score']
-    formatted_combination['std_test_score'] = row['std_test_score']
-    formatted_combinations.append(formatted_combination)
-
-# Converting the structured combinations into DataFrame for better visual representation
-formatted_combinations_df = pd.DataFrame(formatted_combinations)
-
-# Filter results for visualization
-filtered_results = results[['param_criterion', 'param_max_depth', 'mean_test_score', 'std_test_score']] #[(results['param_ccp_alpha'] == 0)]
-filtered_results['param_max_depth'].replace({None: 0}, inplace=True)
-filtered_results['param_criterion_num'] = filtered_results['param_criterion'].map({'gini': 0, 'entropy': 1})
-
-# Create a 3D plot for mean_test_score
-fig = plt.figure(figsize=(12, 6))
-
-# F1 Score 3D plot
-ax1 = fig.add_subplot(121, projection='3d')
-scatter = ax1.scatter(filtered_results['param_max_depth'], 
-            filtered_results['param_criterion_num'], 
-            filtered_results['mean_test_score'], 
-            c=filtered_results['mean_test_score'], 
-            cmap='viridis', s=60, depthshade=False)
-ax1.set_xlabel('Max Depth')
-ax1.set_ylabel('Criterion (0: gini, 1: entropy)')
-ax1.set_zlabel('F1 Score')
-ax1.set_title('F1 Score vs. Hyperparameters')
-ax1.set_yticks([0, 1])
-
-# Standard deviation 3D plot
-ax2 = fig.add_subplot(122, projection='3d')
-scatter_std = ax2.scatter(filtered_results['param_max_depth'], 
-            filtered_results['param_criterion_num'], 
-            filtered_results['std_test_score'], 
-            c=filtered_results['std_test_score'], 
-            cmap='viridis', s=60, depthshade=False)
-ax2.set_xlabel('Max Depth')
-ax2.set_ylabel('Criterion (0: gini, 1: entropy)')
-ax2.set_zlabel('Standard Deviation')
-ax2.set_title('Standard Deviation vs. Hyperparameters')
-ax2.set_yticks([0, 1])
-
-plt.tight_layout()
-plt.show()
-
-# Return the top 2 combinations for the user
-print(formatted_combinations_df)
 
 #résultats:
 
