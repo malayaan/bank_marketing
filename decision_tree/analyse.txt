@@ -1,0 +1,12 @@
+Hyperparamètres : Le fait que les hyperparamètres n'aient pas été restreints (avec des valeurs comme None ou 0) indique que le modèle a été autorisé à trouver la meilleure complexité lors de la validation croisée. Puisque la validation croisée a été utilisée, la complexité du modèle a été testée sur plusieurs sous-ensembles de données pour garantir une performance robuste.
+
+Score F1 : Un score F1 de 0.641 sur la partition de test indique une bonne performance générale, surtout si on le compare avec les performances des modèles de forêts aléatoires précédemment mentionnés. Cela signifie que le modèle a un bon équilibre entre la précision et le rappel lorsqu'il est évalué sur des données non vues pendant l'entraînement.
+
+Précision et Rappel par Classe :
+
+Classe 0 : De forts scores de précision et de rappel indiquent que le modèle est compétent à classifier correctement la classe majoritaire, ce qui est confirmé par un score F1 élevé.
+Classe 1 : Malgré une précision et un rappel inférieurs à ceux de la classe 0, le score F1 de la classe 1 est raisonnable, ce qui suggère que le modèle a une capacité acceptable à identifier la classe minoritaire. Cela est particulièrement important dans des scénarios où la classe minoritaire est celle d'intérêt principal.
+Valeur AUC : Une valeur AUC de 0.658 est raisonnable et suggère que le modèle a une capacité acceptable à distinguer entre les classes positives et négatives. Bien qu'il y ait encore de la place pour l'amélioration, cette valeur indique une performance au-dessus du hasard.
+
+Conclusion Globale :
+L'arbre de décision montre une performance solide sur les données de test, indiquant une bonne généralisation. La performance est particulièrement bonne pour la classe majoritaire. Toutefois, la classe minoritaire, tout en étant raisonnablement bien classifiée, pourrait bénéficier de techniques d'amélioration telles que le rééquilibrage des classes ou l'ajustement des seuils de classification. La validation croisée garantit que ces résultats sont stables à travers différents sous-ensembles des données, ce qui renforce la confiance dans la robustesse du modèle. Les métriques indiquent que le modèle est suffisamment général pour être utilisé dans la pratique, tout en laissant une marge pour des améliorations futures, en particulier pour la classe minoritaire.

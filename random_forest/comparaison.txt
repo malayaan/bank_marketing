@@ -1,0 +1,16 @@
+Les résultats montrent deux modèles de forêts aléatoires optimisés pour une tâche de classification binaire. Voici une interprétation globale des résultats obtenus pour chacun des modèles :
+
+Modèle 1 (Optimisation avec recherche sur grille) :
+
+Performance générale : Ce modèle a une précision globale de 77%, ce qui est assez bon. Le score F1 pour la classe minoritaire (1) est de 0.54, indiquant une performance modérée en termes d'équilibre entre la précision et le rappel.
+Classification Report : La classe 0 (majoritaire) a de meilleurs scores de précision, de rappel et de F1 par rapport à la classe 1 (minoritaire), ce qui est courant dans des ensembles de données déséquilibrés. Cela signifie que le modèle est meilleur pour identifier correctement la classe majoritaire que la minoritaire.
+Matrice de confusion : Le modèle a une tendance à mieux prédire la classe 0 avec 1513 vrais positifs contre 312 pour la classe 1.
+Scores ROC-AUC et Precision-Recall : Le score ROC-AUC de 0.757 suggère une bonne capacité discriminatoire du modèle. Le score Precision-Recall AUC est plus bas, ce qui est souvent le cas avec des jeux de données déséquilibrés.
+Modèle 2 (Forêt d'arbres aléatoire manuelle) :
+
+Performance générale : Une précision similaire à celle du modèle 1 (75% contre 77%), avec un score F1 aussi similaire pour la classe minoritaire (1).
+Classification Report : Comme avec le modèle 1, la classe 0 a de meilleures performances que la classe 1. Cependant, la précision de la classe 1 est inférieure à celle du modèle 1, ce qui indique que ce modèle produit plus de faux positifs.
+Matrice de confusion : Il y a une tendance similaire à mal classer la classe minoritaire, mais la matrice montre que ce modèle a un meilleur rappel pour la classe 1 par rapport au modèle 1.
+ROC-AUC Score : Un score légèrement meilleur de 0.77, suggérant une capacité légèrement supérieure à séparer les classes.
+Conclusion Globale :
+Les deux modèles présentent des performances comparables en termes de précision. Cependant, ils montrent des faiblesses dans la classification de la classe minoritaire, comme en témoignent les scores F1 inférieurs pour la classe 1. La recherche sur grille semble avoir légèrement amélioré la précision de la classe minoritaire dans le modèle 1 par rapport au modèle 2

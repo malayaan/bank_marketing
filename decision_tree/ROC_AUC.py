@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 import matplotlib.pyplot as plt
 from imblearn.over_sampling import SMOTE
 
-data_encoded = pd.read_csv('bank_marketing_encoded.csv')
+data_encoded = pd.read_csv('data/bank_marketing_encoded.csv')
 # Séparer les variables indépendantes et dépendantes
 X = data_encoded.drop('class', axis=1)
 y = data_encoded['class'].replace({'no': 0, 'yes': 1})
@@ -20,16 +20,12 @@ smote = SMOTE(random_state=42)
 X_train, y_train = smote.fit_resample(X_train, y_train)
 
 # Définir les meilleurs hyperparamètres à partir de l'information fournie
-#unbalanced
+
 best_hyperparameters = [
-    {'ccp_alpha': 0.001, 'criterion': 'entropy', 'max_depth': 2, 'min_samples_leaf': 6, 'min_samples_split': 13},
-    {'ccp_alpha': 0.010, 'criterion': 'gini', 'max_depth': 3, 'min_samples_leaf': 1, 'min_samples_split': 5}
+    {'ccp_alpha': 0, 'criterion': 'entropy', 'max_depth': 20, 'min_samples_leaf': 1, 'min_samples_split': 3},
+    {'ccp_alpha': 0.01, 'criterion': 'entropy', 'max_depth': 20, 'min_samples_leaf': 1, 'min_samples_split': 3}
 ]
-#balanced
-# best_hyperparameters = [
-    # {'ccp_alpha': 0.001, 'criterion': 'entropy', 'max_depth': None, 'min_samples_leaf': 1, 'min_samples_split': 3},
-    # {'ccp_alpha': 0.010, 'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 1, 'min_samples_split': 3}
-#]
+
 
 def plot_roc_curve(params, X_train, y_train, X_test, y_test):
     # Former le modèle avec les hyperparamètres donnés

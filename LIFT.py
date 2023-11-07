@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import minimize_scalar
+from scipy.interpolate import interp1d
 
 # Given RPP and Se values
 RPP_values = [19/81, 26/81, 40/81, 81/81]
@@ -38,22 +39,15 @@ plt.show()
 
 print(f"RPP when Se is approximately 0.80: {RPP_at_target_Se:.4f}")
 
-# Given 10% RPP
-target_RPP = 0.10
+# we will create an interpolator with fill_value="extrapolate"
+extrapolate_interp = interp1d(RPP_values, Se_values, kind='linear', fill_value="extrapolate")
 
-# Find the two nearest points to target_RPP
-indices = np.searchsorted(RPP_values, target_RPP)
+# Calculate LIFT at 10% RPP
+RPP_target = 0.10
+Se_at_RPP_target = extrapolate_interp(RPP_target)
+LIFT_at_RPP_target = Se_at_RPP_target / RPP_target
 
-# Extract the two nearest RPP and Se values
-RPP1, RPP2 = RPP_values[indices-1], RPP_values[indices]
-Se1, Se2 = Se_values[indices-1], Se_values[indices]
-
-# Interpolate Se at target_RPP
-interpolated_Se = Se1 + (target_RPP - RPP1) * (Se2 - Se1) / (RPP2 - RPP1)
-
-# Calculate LIFT
-LIFT_10_percent = interpolated_Se / target_RPP
-print("LIFT_10_percent=", LIFT_10_percent)
+print("question 3", LIFT_at_RPP_target)
 
 # Calculate normalized LIFT values: Se(s)/RPP(s)
 normalized_LIFT_values = [Se/RPP for Se, RPP in zip(Se_values, RPP_values)]

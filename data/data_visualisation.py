@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Charger le fichier CSV avec le bon séparateur
-data = pd.read_csv("7 bank_marketing (2).csv", sep=';')
+data = pd.read_csv("data/7 bank_marketing (2).csv", sep=';')
 
 # Afficher les premières lignes du jeu de données
 # print(data.head())
@@ -90,7 +90,7 @@ Housing : Un grand nombre de personnes ont un prêt immobilier (4947).
 Loan : La plupart des personnes n'ont pas de prêt personnel (6774).
 Contact : La majorité des contacts se font par téléphone portable (cellular) (7274).
 Poutcome : La plupart des précédentes campagnes de marketing ont échoué (4694).
-Class : La plupart des personnes n'ont pas souscrit de dépôt à terme (6068).
+Class : La plupart des personnes n'ont pas souscrit de dépôt à terme (6068) soit 77%
 """
 
 # Violin plots pour les variables numériques
